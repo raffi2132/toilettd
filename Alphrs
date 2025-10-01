@@ -1690,9 +1690,9 @@ local function disablePreset(presetKey)
         if presetKey == "auto3" then
             table.insert(steps, function() 
                 if autoFishMainSlider then 
-                    autoFishMainSlider:Set(0.9)
+                    autoFishMainSlider:Set(3)
                 else
-                    setAutoFishMainDelay(0.9)
+                    setAutoFishMainDelay(3)
                 end
                 print("[Preset] Auto Fish Delay reset to default (0.9s)")
             end)
