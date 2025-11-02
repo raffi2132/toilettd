@@ -50,6 +50,8 @@ _G.AUTO_ELEMENT_ENABLED = false   -- Auto Element state
 _G.AUTO_ELEMENT_FARM_ENABLED = false  -- Auto Farm (Element Tab) state
 _G.ELEMENT_FARM_WAIT = 1          -- Custom wait before complete (default 1s)
 _G.ELEMENT_FARM_AFTER_COMPLETE_WAIT = 1  -- Custom wait after complete before loop restart (default 1s)
+_G.AUTO_WEATHER_ENABLED = false   -- Auto Weather state
+_G.WEATHER_PURCHASE_DELAY = 32    -- Delay between weather purchase cycles (default 32s)
 
 print("✅ Services loaded")
 
@@ -1612,6 +1614,196 @@ end
 print("✅ Element farm module ready\n")
 
 -- ─────────────────────────────────────────────────────────────────────────
+-- AUTO WEATHER: Weather Purchase Functions
+-- ─────────────────────────────────────────────────────────────────────────
+
+_G.WEATHER_LOOP_RUNNING = false
+
+-- Weather types to purchase
+local WEATHER_TYPES = {"Wind", "Cloudy", "Storm"}
+
+-- Purchase single weather
+local function purchaseWeather(weatherType)
+    local success, result = pcall(function()
+        local Event = game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net["RF/PurchaseWeatherEvent"]
+        return Event:InvokeServer(weatherType)
+    end)
+
+    if success then
+        print(string.format("[Auto Weather] ✅ Purchased: %s", weatherType))
+        return true
+    else
+        warn(string.format("[Auto Weather] ❌ Failed to purchase: %s", weatherType))
+        return false
+    end
+end
+
+-- Purchase all weather types (Wind, Cloudy, Storm)
+local function purchaseAllWeathers()
+    print(string.rep("-", 70))
+    print("[Auto Weather] 🌤️ Purchasing all weather types...")
+
+    local successCount = 0
+    local failCount = 0
+
+    for i, weatherType in ipairs(WEATHER_TYPES) do
+        local success = purchaseWeather(weatherType)
+
+        if success then
+            successCount = successCount + 1
+        else
+            failCount = failCount + 1
+        end
+
+        -- 10ms delay between each purchase
+        if i < #WEATHER_TYPES then
+            task.wait(0.01)
+        end
+    end
+
+    print(string.format("[Auto Weather] 📊 Batch complete: %d success, %d failed", successCount, failCount))
+    print(string.rep("-", 70))
+
+    return successCount, failCount
+end
+
+-- Auto weather loop
+local function runAutoWeatherLoop()
+    if _G.WEATHER_LOOP_RUNNING then
+        print("⚠️ Auto Weather loop already running!")
+        return
+    end
+
+    _G.WEATHER_LOOP_RUNNING = true
+
+    print(string.rep("=", 70))
+    print("🌤️ AUTO WEATHER - STARTING")
+    print(string.rep("=", 70) .. "\n")
+
+    local cycleCount = 0
+    local totalSuccess = 0
+    local totalFailed = 0
+
+    while _G.WEATHER_LOOP_RUNNING do
+        -- Wait for auto weather to be enabled
+        while not _G.AUTO_WEATHER_ENABLED and _G.WEATHER_LOOP_RUNNING do
+            task.wait(0.5)
+        end
+
+        if not _G.WEATHER_LOOP_RUNNING then break end
+        if not _G.AUTO_WEATHER_ENABLED then continue end
+
+        cycleCount = cycleCount + 1
+
+        print(string.format("\n[Auto Weather #%d] 🌤️ Starting weather purchase cycle...", cycleCount))
+
+        -- Purchase all weathers
+        local success, failed = purchaseAllWeathers()
+        totalSuccess = totalSuccess + success
+        totalFailed = totalFailed + failed
+
+        -- Stats every 5 cycles
+        if cycleCount % 5 == 0 then
+            print(string.rep("=", 70))
+            print(string.format("📊 [AUTO WEATHER STATS]"))
+            print(string.format("   Cycles: %d", cycleCount))
+            print(string.format("   Total Purchases: %d", totalSuccess))
+            print(string.format("   Total Failed: %d", totalFailed))
+            print(string.format("   Delay: %ds", _G.WEATHER_PURCHASE_DELAY))
+            print(string.format("   Status: %s", _G.AUTO_WEATHER_ENABLED and "🟢 ON" or "🔴 OFF"))
+            print(string.rep("=", 70) .. "\n")
+        end
+
+        -- Wait before next cycle
+        print(string.format("[Auto Weather #%d] ⏳ Waiting %ds before next purchase...\n", cycleCount, _G.WEATHER_PURCHASE_DELAY))
+        task.wait(_G.WEATHER_PURCHASE_DELAY)
+    end
+
+    -- Cleanup
+    print("\n" .. string.rep("=", 70))
+    print("🛑 AUTO WEATHER STOPPED")
+    print(string.rep("=", 70))
+    if cycleCount > 0 then
+        print(string.format("\n📊 FINAL: %d cycles | %d purchases | %d failed\n", cycleCount, totalSuccess, totalFailed))
+    end
+
+    _G.WEATHER_LOOP_RUNNING = false
+end
+
+-- Start auto weather
+local function startAutoWeather()
+    if _G.AUTO_WEATHER_ENABLED then
+        print("⚠️ Auto Weather already enabled!")
+        return
+    end
+
+    print("\n🌤️ Starting Auto Weather...")
+    _G.AUTO_WEATHER_ENABLED = true
+
+    if not _G.WEATHER_LOOP_RUNNING then
+        task.spawn(runAutoWeatherLoop)
+    end
+
+    print("✅ Auto Weather ENABLED\n")
+end
+
+-- Stop auto weather
+local function stopAutoWeather()
+    if not _G.AUTO_WEATHER_ENABLED then
+        print("⚠️ Auto Weather already stopped!")
+        return
+    end
+
+    print("\n🛑 Stopping Auto Weather...")
+    _G.AUTO_WEATHER_ENABLED = false
+
+    print("✅ Auto Weather stopped successfully\n")
+end
+
+print("✅ Auto weather module ready\n")
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- TELEPORT: Location Database & Functions
+-- ─────────────────────────────────────────────────────────────────────────
+
+-- Teleport locations (dapat ditambahkan lebih banyak di sini)
+local TELEPORT_LOCATIONS = {
+    ["Sacred Temple"] = CFrame.new(1466.92151, -21.8750591, -622.835693, -0.764787138, 8.14444334e-09, 0.644283056, 2.31097452e-08, 1, 1.4791004e-08, -0.644283056, 2.6201187e-08, -0.764787138),
+    -- Tambahkan lokasi lain di sini nanti
+    -- ["Ancient Jungle"] = CFrame.new(...),
+}
+
+-- Teleport to location
+local function teleportToLocation(locationName)
+    local cframeData = TELEPORT_LOCATIONS[locationName]
+
+    if not cframeData then
+        warn(string.format("[Teleport] ❌ Location '%s' not found!", locationName))
+        return false
+    end
+
+    local success = pcall(function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = cframeData
+            print(string.format("[Teleport] ✅ Teleported to: %s", locationName))
+        else
+            warn("[Teleport] ❌ HumanoidRootPart not found!")
+        end
+    end)
+
+    if not success then
+        warn(string.format("[Teleport] ❌ Failed to teleport to: %s", locationName))
+        return false
+    end
+
+    return true
+end
+
+print("✅ Teleport module ready\n")
+
+-- ─────────────────────────────────────────────────────────────────────────
 -- AUTO ELEMENT: Teleport Functions
 -- ─────────────────────────────────────────────────────────────────────────
 
@@ -2831,6 +3023,140 @@ task.spawn(function()
 end)
 
 print("✅ Auto Element tab created")
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- SECTION 4.5: WEATHER TAB
+-- ═══════════════════════════════════════════════════════════════════════════
+
+local WeatherTab = Window:Tab({
+    Title = "Weather",
+    Icon = "cloud"
+})
+
+WeatherTab:Section({
+    Title = "🌤️ Weather Controls"
+})
+
+-- Auto Weather Toggle
+WeatherTab:Toggle({
+    Title = "Auto Weather",
+    Desc = "Auto-purchase Wind, Cloudy, and Storm weather",
+    Type = "Toggle",
+    Default = false,
+    Flag = "AutoWeatherEnabled",
+    Callback = function(state)
+        if state then
+            startAutoWeather()
+        else
+            stopAutoWeather()
+        end
+    end
+})
+
+WeatherTab:Space({ Size = 10 })
+
+-- Purchase Delay Input
+WeatherTab:Input({
+    Title = "Purchase Delay",
+    Desc = "Delay between weather purchase cycles (seconds)",
+    Type = "Input",
+    Placeholder = "32",
+    Value = "32",
+    InputIcon = "clock",
+    Callback = function(value)
+        local delay = tonumber(value)
+        if delay and delay > 0 then
+            _G.WEATHER_PURCHASE_DELAY = delay
+            print(string.format("⏱️ Weather purchase delay: %ds", delay))
+        else
+            print("❌ Invalid delay! Using default: 32s")
+            _G.WEATHER_PURCHASE_DELAY = 32
+        end
+    end
+})
+
+WeatherTab:Space({ Size = 20 })
+
+WeatherTab:Divider()
+
+WeatherTab:Space({ Size = 15 })
+
+WeatherTab:Section({
+    Title = "ℹ️ Weather Info"
+})
+
+WeatherTab:Paragraph({
+    Title = "📋 Purchase Order",
+    Desc = "1. Wind\n2. Cloudy\n3. Storm\n\nDelay: 0.01s between each weather\nCycle delay: Custom (default 32s)"
+})
+
+WeatherTab:Space({ Size = 15 })
+
+WeatherTab:Paragraph({
+    Title = "⚙️ How It Works",
+    Desc = "When enabled, this will automatically purchase Wind, Cloudy, and Storm weather in sequence every X seconds (configurable delay).\n\nUse this to keep weather effects active continuously."
+})
+
+print("✅ Auto Weather tab created")
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- SECTION 4.6: TELEPORT TAB
+-- ═══════════════════════════════════════════════════════════════════════════
+
+local TeleportTab = Window:Tab({
+    Title = "Teleport",
+    Icon = "map-pin"
+})
+
+TeleportTab:Section({
+    Title = "📍 Teleport Locations"
+})
+
+-- Sacred Temple Button
+TeleportTab:Button({
+    Title = "Sacred Temple",
+    Desc = "Teleport to Sacred Temple",
+    Callback = function()
+        teleportToLocation("Sacred Temple")
+    end
+})
+
+TeleportTab:Space({ Size = 10 })
+
+-- Placeholder untuk lokasi tambahan (bisa ditambahkan nanti)
+--[[
+TeleportTab:Button({
+    Title = "Ancient Jungle",
+    Desc = "Teleport to Ancient Jungle",
+    Callback = function()
+        teleportToLocation("Ancient Jungle")
+    end
+})
+
+TeleportTab:Space({ Size = 10 })
+]]
+
+TeleportTab:Divider()
+
+TeleportTab:Space({ Size = 15 })
+
+TeleportTab:Section({
+    Title = "ℹ️ Info"
+})
+
+TeleportTab:Paragraph({
+    Title = "📌 Available Locations",
+    Desc = "• Sacred Temple\n\nMore locations can be added to TELEPORT_LOCATIONS table in the code."
+})
+
+TeleportTab:Space({ Size = 15 })
+
+TeleportTab:Paragraph({
+    Title = "⚙️ How to Add Locations",
+    Desc = "1. Find the location's CFrame coordinates\n2. Add to TELEPORT_LOCATIONS table (line ~1770)\n3. Add button in this tab UI\n\nFormat:\n[\"Location Name\"] = CFrame.new(...)"
+})
+
+print("✅ Teleport tab created")
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- SECTION 5: MAIN EXECUTION
