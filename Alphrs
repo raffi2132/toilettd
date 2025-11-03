@@ -3133,6 +3133,24 @@ TeleportTab:Button({
     end
 })
 
+-- Sisyphus Statue Button
+TeleportTab:Button({
+    Title = "Sisyphus Statue",
+    Desc = "Teleport to Sisyphus Statue",
+    Callback = function()
+        teleportToLocation("Sisyphus Statue")
+    end
+})
+
+-- Treasure Room Button
+TeleportTab:Button({
+    Title = "Treasure Room",
+    Desc = "Teleport to Treasure Room",
+    Callback = function()
+        teleportToLocation("Treasure Room")
+    end
+})
+
 TeleportTab:Space({ Size = 10 })
 
 -- Placeholder untuk lokasi tambahan (bisa ditambahkan nanti)
