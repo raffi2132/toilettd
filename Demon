@@ -7,7 +7,7 @@
     - Auto Enchant
     - Auto Select SECRET Tier Only
     - NEW: Queue System dengan Chat Coordination
-    - NEW: Auto-send "DONE" signal
+    - NEW: Auto-send "Done" signal
     - NEW: Chat listener untuk queue coordination
 --]]
 
@@ -58,14 +58,14 @@ local acceptedTradesCount = 0
 
 -- ====== QUEUE SYSTEM VARIABLES ======
 local isQueueModeEnabled = false
-local selectedWaitForPlayer = nil -- Player object yang ditunggu signal "DONE" nya (nil = first in queue)
+local selectedWaitForPlayer = nil -- Player object yang ditunggu signal "Done" nya (nil = first in queue)
 local queueTimeout = 300 -- Timeout dalam detik (default 5 menit)
-local waitingForPlayer = nil -- Player name yang sedang ditunggu untuk kirim "DONE"
+local waitingForPlayer = nil -- Player name yang sedang ditunggu untuk kirim "Done"
 local timeoutStartTime = 0 -- Waktu mulai timeout
 local queueStatus = "Idle" -- "Idle", "Waiting", "Trading", "Done", "Timeout"
 local chatMessageConnection = nil -- Connection untuk MessageReceived
 local timeoutCheckConnection = nil -- Connection untuk check timeout
-local queueSignalKeyword = "DONE" -- Keyword untuk signal queue
+local queueSignalKeyword = "Done" -- Keyword untuk signal queue
 
 -- Enchant Database
 local enchantDatabase = {
@@ -327,9 +327,9 @@ isMyTurnToTrade = function()
     return false
 end
 
--- Function to send DONE signal via chat (ALWAYS sends after trade complete)
+-- Function to send Done signal via chat (ALWAYS sends after trade complete)
 sendDoneSignal = function()
-    print("[Auto Trade] 📤 Sending DONE signal to chat...")
+    print("[Auto Trade] 📤 Sending Done signal to chat...")
 
     local success, err = pcall(function()
         local textChannels = TextChatService:FindFirstChild("TextChannels")
@@ -344,7 +344,7 @@ sendDoneSignal = function()
             return
         end
 
-        -- Send the DONE message
+        -- Send the Done message
         generalChannel:SendAsync(queueSignalKeyword)
         print(string.format("[Auto Trade] ✅ Successfully sent '%s' signal in chat!", queueSignalKeyword))
 
@@ -359,7 +359,7 @@ sendDoneSignal = function()
     end)
 
     if not success then
-        warn("[Auto Trade] ❌ Failed to send DONE signal:", tostring(err))
+        warn("[Auto Trade] ❌ Failed to send Done signal:", tostring(err))
     end
 end
 
@@ -415,7 +415,7 @@ stopQueueTimeout = function()
     end
 end
 
--- Function to setup chat listener for DONE messages
+-- Function to setup chat listener for Done messages
 setupQueueChatListener = function()
     if not isQueueModeEnabled then
         return
@@ -521,7 +521,7 @@ startQueuedAutoTrade = function()
         queueStatus = "Trading"
         startAutoTrade()
     else
-        print(string.format("[Queue] ⏳ Waiting for %s to send 'DONE'...", selectedWaitForPlayer.Name))
+        print(string.format("[Queue] ⏳ Waiting for %s to send ''...", selectedWaitForPlayer.Name))
         setupQueueChatListener()
 
         if fishDetectionWindow then
@@ -952,11 +952,11 @@ processNextTrade = function()
         isAutoTrading = false
         selectedFishIndices = {}
 
-        -- AUTO CHAT "DONE" - ALWAYS send after all trades complete
-        print("[Auto Trade] 📤 All trades completed! Sending DONE signal in 2 seconds...")
+        -- AUTO CHAT "" - ALWAYS send after all trades complete
+        print("[Auto Trade] 📤 All trades completed! Sending  signal in 2 seconds...")
         updateDisplay()
         task.wait(2) -- 2 second cooldown
-        sendDoneSignal()
+        sendSignal()
 
         updateDisplay()
         return
@@ -2511,7 +2511,7 @@ updateDisplay = function()
         local function add(inst) inst.LayoutOrder = order; order = order + 1; return inst end
 
         add(fishDetectionWindow:AddLabel("Auto Trade Automation (Max 3 retries per fish)"))
-        add(fishDetectionWindow:AddLabel("💬 Auto-chats 'DONE' after all trades complete"))
+        add(fishDetectionWindow:AddLabel("💬 Auto-chats '' after all trades complete"))
 
         -- Queue Mode Indicator
         if isQueueModeEnabled then
@@ -2627,8 +2627,8 @@ updateDisplay = function()
         local order = 1
         local function add(inst) inst.LayoutOrder = order; order = order + 1; return inst end
 
-        add(fishDetectionWindow:AddLabel("⏱️ Queue System - Wait for DONE Signal"))
-        add(fishDetectionWindow:AddLabel("Select a player to wait for 'DONE' chat signal before trading."))
+        add(fishDetectionWindow:AddLabel("⏱️ Queue System - Wait for  Signal"))
+        add(fishDetectionWindow:AddLabel("Select a player to wait for 'Done' chat signal before trading."))
         add(fishDetectionWindow:AddLabel("Leave empty if you're first in queue."))
 
         -- Queue Status Section
@@ -2671,7 +2671,7 @@ updateDisplay = function()
 
         -- Player Selection Section
         add(fishDetectionWindow:AddLabel("━━━━━━ Select Player to Wait For ━━━━━━"))
-        add(fishDetectionWindow:AddLabel("Choose which player you want to wait for 'DONE' signal from."))
+        add(fishDetectionWindow:AddLabel("Choose which player you want to wait for 'Done' signal from."))
         add(fishDetectionWindow:AddLabel("Leave unselected if you're first in queue."))
 
         if selectedWaitForPlayer then
@@ -2749,7 +2749,7 @@ updateDisplay = function()
                 end))
             end
 
-            add(fishDetectionWindow:AddButton("🔧 Test Send DONE Signal", function()
+            add(fishDetectionWindow:AddButton("🔧 Test Send Done Signal", function()
                 sendDoneSignal()
             end))
 
@@ -2761,7 +2761,7 @@ updateDisplay = function()
 
                 if selectedWaitForPlayer then
                     print(string.format("[Queue] 👂 Will wait for: %s", selectedWaitForPlayer.Name))
-                    -- Start listening for DONE signal immediately
+                    -- Start listening for Done signal immediately
                     setupQueueChatListener()
                 else
                     print("[Queue] ℹ️ First in queue - no wait needed")
@@ -2776,7 +2776,7 @@ updateDisplay = function()
         add(fishDetectionWindow:AddLabel("1️⃣ WITHOUT Queue Mode (Normal):"))
         add(fishDetectionWindow:AddLabel("   • Go to Auto Trade tab"))
         add(fishDetectionWindow:AddLabel("   • Click 'Start Auto Trade'"))
-        add(fishDetectionWindow:AddLabel("   • After done → Auto chat 'DONE'"))
+        add(fishDetectionWindow:AddLabel("   • After Done → Auto chat 'Done'"))
         add(fishDetectionWindow:AddLabel(""))
         add(fishDetectionWindow:AddLabel("2️⃣ WITH Queue Mode (Wait for signal):"))
         add(fishDetectionWindow:AddLabel("   Player 1 (First):"))
@@ -2787,12 +2787,12 @@ updateDisplay = function()
         add(fishDetectionWindow:AddLabel("   Player 2 (Second):"))
         add(fishDetectionWindow:AddLabel("   • SELECT Player 1 in Queue tab"))
         add(fishDetectionWindow:AddLabel("   • Enable Queue Mode (auto-listens)"))
-        add(fishDetectionWindow:AddLabel("   • When P1 says 'DONE' → Auto-start trade"))
+        add(fishDetectionWindow:AddLabel("   • When P1 says 'Done' → Auto-start trade"))
         add(fishDetectionWindow:AddLabel(""))
         add(fishDetectionWindow:AddLabel("   Player 3 (Third):"))
         add(fishDetectionWindow:AddLabel("   • SELECT Player 2 in Queue tab"))
         add(fishDetectionWindow:AddLabel("   • Enable Queue Mode (auto-listens)"))
-        add(fishDetectionWindow:AddLabel("   • When P2 says 'DONE' → Auto-start trade"))
+        add(fishDetectionWindow:AddLabel("   • When P2 says 'Done' → Auto-start trade"))
 
     elseif currentTab == "Enchant" then
         local order = 1
